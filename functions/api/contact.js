@@ -34,18 +34,31 @@ export async function onRequestPost({ request, env }) {
     _template: "table",
   };
 
+  // FormSubmit rejects calls without a browser-style Origin/Referer, so pass the
+  // site's own origin along with the relay request.
+  const origin = new URL(request.url).origin;
   try {
     const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(to)}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Origin: origin,
+        Referer: origin + "/",
+      },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) return json({ ok: false, error: "delivery_failed" }, 502);
+    const result = await res.json().catch(() => null);
+    // FormSubmit returns HTTP 200 with success:"true" on delivery. Before the
+    // one-time activation it returns success:"false" with an activation notice —
+    // treat that as pending, not a hard failure.
+    if (!res.ok || !result) return json({ ok: false, error: "delivery_failed" }, 502);
+    if (String(result.success) === "true") return json({ ok: true });
+    if (/activation/i.test(result.message || "")) return json({ ok: true, pending: true });
+    return json({ ok: false, error: "delivery_failed" }, 502);
   } catch {
     return json({ ok: false, error: "delivery_failed" }, 502);
   }
-
-  return json({ ok: true });
 }
 
 function json(obj, status = 200) {
