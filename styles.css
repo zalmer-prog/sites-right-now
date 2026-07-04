@@ -294,6 +294,7 @@ section { padding: 88px 26px; max-width: 1060px; margin: 0 auto; }
 .start-card input:focus,
 .start-card textarea:focus { outline: none; border-color: var(--accent); }
 .start-card textarea { resize: vertical; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .sent-msg {
   display: none;
   margin-top: 14px;
@@ -304,6 +305,7 @@ section { padding: 88px 26px; max-width: 1060px; margin: 0 auto; }
   font-size: 0.92rem;
   font-weight: 500;
 }
+.sent-err { background: rgba(120,60,40,0.08); color: #7a4a37; }
 
 /* ---------- Footer ---------- */
 .site-footer {

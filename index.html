@@ -194,15 +194,17 @@
         <p class="start-ps">P.S. Not sure what you need? Send a note anyway and I'll tell you honestly whether I can help.</p>
       </div>
       <div class="start-card">
-        <form onsubmit="event.preventDefault(); this.reset(); document.getElementById('sent').style.display='block';">
+        <form id="lead-form">
           <label>Your name<input type="text" name="name" placeholder="Jane Smith" required /></label>
           <label>Business name<input type="text" name="business" placeholder="Jane's Bakery" required /></label>
           <label>Email or phone<input type="text" name="contact" placeholder="jane@email.com or (555) 000-0000" required /></label>
           <label>What does your business do?
             <textarea name="about" rows="3" placeholder="A sentence or two, and anything you'd want on the site."></textarea>
           </label>
+          <input type="text" name="_gotcha" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
           <button type="submit" class="btn btn-solid btn-block">Send it over</button>
           <p id="sent" class="sent-msg">Thanks — I'll be in touch shortly to get things started.</p>
+          <p id="senderr" class="sent-msg sent-err">Hmm, that didn't send. Give it another try in a moment.</p>
         </form>
       </div>
     </div>
@@ -222,5 +224,36 @@
     </div>
     <p class="footer-copy">Websites for small businesses. $75 a month, everything in. hello@sitesrightnow.com · © 2026</p>
   </footer>
+
+  <script>
+    (function () {
+      var form = document.getElementById('lead-form');
+      if (!form) return;
+      var ok = document.getElementById('sent');
+      var err = document.getElementById('senderr');
+      var btn = form.querySelector('button[type="submit"]');
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (form.reportValidity && !form.reportValidity()) return;
+        ok.style.display = 'none';
+        err.style.display = 'none';
+        var label = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+        fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.fromEntries(new FormData(form).entries()))
+        })
+          .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+          .then(function (d) {
+            if (d && d.ok) { form.reset(); ok.style.display = 'block'; }
+            else { err.style.display = 'block'; }
+          })
+          .catch(function () { err.style.display = 'block'; })
+          .finally(function () { btn.disabled = false; btn.textContent = label; });
+      });
+    })();
+  </script>
 </body>
 </html>
